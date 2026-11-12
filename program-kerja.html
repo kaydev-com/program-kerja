@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Program Kerja — Plan vs Actual</title>
+<script>
+window.onerror = function (msg) {
+  var w = document.getElementById("js-warning");
+  if (w) { w.style.display = "block"; w.innerHTML = "⚠️ <b>Ada error JavaScript:</b> " + msg + "<br>Buka file ini memakai <b>Chrome</b> (bukan preview file), lalu kirim pesan error ini."; }
+  return false;
+};
+</script>
+<style>
+  :root{--navy:#0e3a5d;--blue:#1565c0;--ink:#17222c;--muted:#66788a;--line:#dbe3ec;--bg:#eef2f6;--card:#fff;--ok:#128c4a;--danger:#c0392b;--warn:#b45309;--radius:14px;--shadow:0 2px 10px rgba(14,58,93,.08)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;padding-bottom:40px}
+  button,input,select,textarea{font:inherit}
+  header{position:sticky;top:0;z-index:30;background:var(--navy);color:#fff;padding:14px 16px 12px}
+  header h1{margin:0;font-size:18px} header p{margin:2px 0 10px;font-size:12.5px;opacity:.85}
+  .stats{display:flex;gap:6px}
+  .stat{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:7px 4px;text-align:center}
+  .stat b{display:block;font-size:17px} .stat span{font-size:10px;opacity:.85;text-transform:uppercase;letter-spacing:.3px}
+  main{max-width:760px;margin:0 auto;padding:12px}
+  #js-warning{display:block;background:#fdecea;border:1px solid #f5c6cb;color:#7b1f1f;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13.5px}
+  .note{background:#fff7e6;border:1px solid #f3d9a4;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13.5px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
+  .panel h2{margin:0 0 8px;font-size:15.5px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .toolbar select{border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff}
+  .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;font-size:14px;cursor:pointer}
+  .btn-blue{background:var(--blue);color:#fff} .btn-navy{background:var(--navy);color:#fff} .btn-green{background:#1faa55;color:#fff} .btn-ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+  .mini{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:9px;padding:6px 10px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .mini.del{color:var(--danger)}
+  .viewbtn{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px;font-weight:700;cursor:pointer}
+  .viewbtn.active{background:var(--navy);color:#fff}
+  .field{margin-bottom:11px} .field label{display:block;font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:5px}
+  .field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
+  .field textarea{min-height:60px}
+  .scroll{overflow-x:auto}
+  table.mx{border-collapse:collapse;min-width:640px;width:100%;background:#fff;font-size:13px}
+  table.mx th,table.mx td{border:1px solid #b9c6d3;padding:6px 4px;text-align:center}
+  table.mx th{background:#bcd3e8} table.mx td.prog{text-align:left;font-weight:700;min-width:170px}
+  td.cell{cursor:pointer;min-width:34px;height:30px}
+  td.plan-on{background:#9aa5ad} td.actual-on{background:repeating-linear-gradient(0deg,#fff 0 3px,#333 3px 4px)}
+  td.thismonth{outline:2px solid var(--blue);outline-offset:-2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 4px;font-size:15.5px;color:var(--navy)}
+  .badge{font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;color:#fff}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;margin:4px 0 10px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .chip.plan-on{background:#9aa5ad;color:#fff} .chip.actual-on{background:repeating-linear-gradient(0deg,#fff 0 3px,#333 3px 4px)}
+  .chip.thismonth{outline:2px solid var(--blue)}
+  .tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .tools .btn{padding:11px 6px;font-size:13px}
+  textarea.preview{width:100%;min-height:180px;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px;background:#f8fafc}
+  .attn{font-size:13.5px} .attn li{margin-bottom:4px}
+  .muted{color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Program Kerja — Plan vs Actual</h1>
+  <p>Manajemen &amp; monitoring · mengikuti format foto · ketuk sel/chip untuk menandai</p>
+  <div class="stats">
+    <div class="stat"><b id="stTotal">0</b><span>Total</span></div>
+    <div class="stat"><b id="stDone">0</b><span>Selesai</span></div>
+    <div class="stat"><b id="stLate">0</b><span>Terlambat</span></div>
+    <div class="stat"><b id="stAvg">0%</b><span>Rata-rata</span></div>
+  </div>
+</header>
+<main>
+  <div id="js-warning">Memuat aplikasi… Jika pesan ini tidak hilang, JavaScript tidak jalan di penampil ini — buka file memakai <b>Chrome</b>.</div>
+  <div class="note">📌 <b>Catatan:</b> program ke-3 dari foto (<i>Review Tabel Sasaran Mutu Tahun 2026</i>) baris Actual-nya terpotong di foto, jadi sengaja dikosongkan — tandai bila sudah terealisasi. <b>Plan</b> = blok abu-abu, <b>Actual</b> = arsir garis. Untuk memasukkan banyak program dari Excel: tempel daftar nama program yang dipisah <b>koma</b> di panel <b>Import / Export Daftar Program</b> di bawah. Data tersimpan di browser ini (localStorage).</div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <select id="yearSel"></select>
+      <button class="viewbtn active" id="btnMatrix" onclick="setView('matrix')">Matriks</button>
+      <button class="viewbtn" id="btnCards" onclick="setView('cards')">Kartu</button>
+    </div>
+    <div id="attnBox"></div>
+  </div>
+
+  <div class="panel" id="formPanel">
+    <h2 id="formTitle">＋ Tambah Program</h2>
+    <div class="field"><label>Nama Program</label><input id="fNama" type="text" placeholder="cth: Review Program Food Safety Team Leader Periode 2027"></div>
+    <div class="field"><label>Tahun</label><input id="fTahun" type="number" value="2026"></div>
+    <div class="field"><label>PIC / Penanggung Jawab</label><input id="fPIC" type="text" placeholder="cth: Nama penanggung jawab program"></div>
+    <div class="field"><label>Keterangan</label><textarea id="fKet" placeholder="Opsional"></textarea></div>
+    <button class="btn btn-navy" onclick="saveForm()">Simpan Program</button>
+    <button class="btn btn-ghost" onclick="resetForm()">Batal</button>
+    <p class="muted">Setelah tersimpan, tandai bulan Plan/Actual lewat matriks atau kartu di bawah.</p>
+  </div>
+
+  <div id="matrixView" class="panel"><div class="scroll" id="matrixWrap"></div><p class="muted">Plan = blok abu-abu solid · Actual = arsir garis · kolom bergaris biru = bulan berjalan. Ketuk sel untuk memberi/menghapus tanda.</p></div>
+  <div id="cardsView" class="panel" style="display:none"><div id="cardsWrap"></div></div>
+
+  <div class="panel">
+    <h2>Ringkasan &amp; Data</h2>
+    <div class="tools">
+      <button class="btn btn-green" onclick="copyWA()">📋 Salin Ringkasan WA</button>
+      <button class="btn btn-blue" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-navy" onclick="dupYear()">⧉ Duplikat ke Tahun Berikut</button>
+      <button class="btn btn-ghost" onclick="backupJSON()">💾 Backup JSON</button>
+    </div>
+    <label class="muted" style="display:block;margin-top:12px">Pulihkan dari file JSON: <input type="file" id="restoreFile" accept=".json,application/json" onchange="restoreJSON(event)"></label>
+    <textarea class="preview" id="waPreview" readonly placeholder="Teks ringkasan akan tampil di sini — tekan tombol Salin, atau salin manual dari kotak ini bila clipboard terblokir."></textarea>
+    <p class="muted" id="saveInfo"></p>
+  </div>
+
+  <div class="panel">
+    <h2>Import / Export Daftar Program</h2>
+    <p class="muted">Daftar program tahun terpilih, dipisah koma — siap ditempel ke Excel / teks:</p>
+    <textarea class="preview" id="listPreview" readonly style="min-height:80px"></textarea>
+    <div style="margin:8px 0 14px"><button class="btn btn-blue" onclick="copyList()">📋 Salin Daftar (Koma)</button></div>
+    <p class="muted">Import: tempel nama-nama program yang dipisah <b>koma</b> (atau baris baru), tentukan tahunnya, lalu tekan Import. Nama yang sudah ada di tahun itu dilewati (tidak dobel).</p>
+    <textarea class="preview" id="importText" style="min-height:80px" placeholder="cth: Program A, Program B, Program C"></textarea>
+    <div class="toolbar" style="margin-top:8px"><span>Tahun: <input id="importYear" type="number" value="2026" style="width:90px;border:1px solid var(--line);border-radius:10px;padding:9px"></span><button class="btn btn-green" onclick="importPrograms()">⬆ Import Program</button></div>
+    <p class="muted" id="importInfo"></p>
+  </div>
+</main>
+<script>
+var MONTHS = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Ags","Sep","Okt","Nov","Des"];
+var KEY = "programKerjaV1";
+var memFallback = null;
+var programs = [];
+var view = "matrix";
+var editId = null;
+var now = new Date();
+var nowYear = now.getFullYear();
+var nowMonth = now.getMonth();
+
+function uid() { return "p" + new Date().getTime().toString(36) + Math.floor(Math.random() * 10000).toString(36); }
+function has(arr, m) { return arr.indexOf(m) >= 0; }
+function toggle(arr, m) { var i = arr.indexOf(m); if (i >= 0) { arr.splice(i, 1); } else { arr.push(m); arr.sort(function (a, b) { return a - b; }); } }
+function monthList(arr) { var out = []; for (var i = 0; i < arr.length; i++) { out.push(MONTHS[arr[i]]); } return out.join(", ") || "-"; }
+
+function seed() {
+  return [
+    { id: uid(), nama: "Review Program Food Safety Team Leader Periode 2026", tahun: 2026, pic: "", keterangan: "", plan: [0], actual: [0] },
+    { id: uid(), nama: "Review Keanggotaan Food Safety Team Leader Periode 2026", tahun: 2026, pic: "", keterangan: "", plan: [0], actual: [0] },
+    { id: uid(), nama: "Review Tabel Sasaran Mutu Tahun 2026 (All Dept)", tahun: 2026, pic: "", keterangan: "", plan: [0], actual: [] }
+  ];
+}
+function normalize() { for (var i = 0; i < programs.length; i++) { var p = programs[i]; if (!p.pic) { p.pic = ""; } if (!p.keterangan) { p.keterangan = ""; } if (!p.plan) { p.plan = []; } if (!p.actual) { p.actual = []; } } }
+function load() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) { programs = JSON.parse(raw); normalize(); return; }
+  } catch (e) { if (memFallback) { programs = memFallback; normalize(); return; } }
+  programs = seed(); save();
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(programs)); document.getElementById("saveInfo").textContent = "Tersimpan di browser ini (localStorage, kunci " + KEY + ")."; }
+  catch (e) { memFallback = programs; document.getElementById("saveInfo").textContent = "localStorage diblokir penampil ini — data hanya tersimpan di memori sesi ini. Buka lewat Chrome & pakai Backup JSON."; }
+}
+function statusOf(p) {
+  if (!p.plan.length) { return "Belum Dimulai"; }
+  var done = 0, late = false;
+  for (var i = 0; i < p.plan.length; i++) {
+    var m = p.plan[i];
+    if (has(p.actual, m)) { done++; }
+    else if (p.tahun < nowYear || (p.tahun === nowYear && m <= nowMonth)) { late = true; }
+  }
+  if (done === p.plan.length) { return "Selesai"; }
+  if (late) { return "Terlambat"; }
+  if (p.actual.length) { return "Berjalan"; }
+  return "Belum Dimulai";
+}
+function pctOf(p) {
+  if (!p.plan.length) { return 0; }
+  var done = 0;
+  for (var i = 0; i < p.plan.length; i++) { if (has(p.actual, p.plan[i])) { done++; } }
+  return Math.round(done / p.plan.length * 100);
+}
+function badgeColor(s) {
+  if (s === "Selesai") { return "#128c4a"; }
+  if (s === "Terlambat") { return "#c0392b"; }
+  if (s === "Berjalan") { return "#1565c0"; }
+  return "#66788a";
+}
+function curYear() { var s = document.getElementById("yearSel"); return parseInt(s.value, 10) || nowYear; }
+function filtered() { var y = curYear(); var out = []; for (var i = 0; i < programs.length; i++) { if (programs[i].tahun === y) { out.push(programs[i]); } } return out; }
+function fillYears() {
+  var years = {}; for (var i = 0; i < programs.length; i++) { years[programs[i].tahun] = true; }
+  years[nowYear] = true;
+  var list = []; for (var y in years) { list.push(parseInt(y, 10)); }
+  list.sort(function (a, b) { return a - b; });
+  var sel = document.getElementById("yearSel"); sel.innerHTML = "";
+  for (var j = 0; j < list.length; j++) { var o = document.createElement("option"); o.value = list[j]; o.text = "Tahun " + list[j]; if (list[j] === nowYear) { o.selected = true; } sel.appendChild(o); }
+  sel.onchange = render;
+}
+function render() {
+  var list = filtered();
+  var done = 0, late = 0, sum = 0, attn = [];
+  for (var i = 0; i < list.length; i++) {
+    var s = statusOf(list[i]); sum += pctOf(list[i]);
+    if (s === "Selesai") { done++; }
+    if (s === "Terlambat") { late++; attn.push(list[i]); }
+  }
+  document.getElementById("stTotal").textContent = list.length;
+  document.getElementById("stDone").textContent = done;
+  document.getElementById("stLate").textContent = late;
+  document.getElementById("stAvg").textContent = (list.length ? Math.round(sum / list.length) : 0) + "%";
+  var ab = document.getElementById("attnBox");
+  if (attn.length) {
+    var h = "<b>⚠️ Perlu Perhatian (" + attn.length + ")</b><ul class='attn'>";
+    for (var k = 0; k < attn.length; k++) { h += "<li>" + esc(attn[k].nama) + " — Plan " + monthList(attn[k].plan) + ", Actual baru " + monthList(attn[k].actual) + "</li>"; }
+    ab.innerHTML = h + "</ul>";
+  } else { ab.innerHTML = "<span class='muted'>Tidak ada program terlambat di tahun ini. 🎉</span>"; }
+  renderMatrix(list); renderCards(list); renderWA(list); renderList(list);
+}
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function renderMatrix(list) {
+  var h = "<table class='mx'><tr><th>No.</th><th>Program</th><th>Plan vs Actual</th>";
+  for (var m = 0; m < 12; m++) { h += "<th>" + MONTHS[m] + "</th>"; }
+  h += "<th>Keterangan</th></tr>";
+  for (var i = 0; i < list.length; i++) {
+    var p = list[i], s = statusOf(p);
+    h += "<tr><td rowspan='2'>" + (i + 1) + "</td><td class='prog' rowspan='2'>" + esc(p.nama) + (p.pic ? "<br><span class='muted'>PIC: " + esc(p.pic) + "</span>" : "") + "<br><span class='badge' style='background:" + badgeColor(s) + "'>" + s + " · " + pctOf(p) + "%</span><br><button class='mini' onclick=\"editProgram('" + p.id + "')\">Edit</button> <button class='mini' onclick=\"moveProgram('" + p.id + "',-1)\">↑</button> <button class='mini' onclick=\"moveProgram('" + p.id + "',1)\">↓</button> <button class='mini del' onclick=\"delProgram('" + p.id + "')\">Hapus</button></td>";
+    h += "<td><b>Plan</b></td>";
+    for (var a = 0; a < 12; a++) { h += "<td class='cell" + (has(p.plan, a) ? " plan-on" : "") + (p.tahun === nowYear && a === nowMonth ? " thismonth" : "") + "' onclick=\"toggleCell('" + p.id + "','plan'," + a + ")\"></td>"; }
+    h += "<td rowspan='2'>" + esc(p.keterangan || "-") + "</td></tr><tr><td><b>Actual</b></td>";
+    for (var b = 0; b < 12; b++) { h += "<td class='cell" + (has(p.actual, b) ? " actual-on" : "") + (p.tahun === nowYear && b === nowMonth ? " thismonth" : "") + "' onclick=\"toggleCell('" + p.id + "','actual'," + b + ")\"></td>"; }
+    h += "</tr>";
+  }
+  h += "</table>";
+  if (!list.length) { h = "<p class='muted'>Belum ada program di tahun ini. Tambah lewat form di atas, atau duplikat dari tahun sebelumnya.</p>"; }
+  document.getElementById("matrixWrap").innerHTML = h;
+}
+function renderCards(list) {
+  var h = "";
+  for (var i = 0; i < list.length; i++) {
+    var p = list[i], s = statusOf(p);
+    h += "<div class='card'><h3>" + (i + 1) + ". " + esc(p.nama) + "</h3>" + (p.pic ? "<div class='muted'>👤 PIC: " + esc(p.pic) + "</div>" : "") + "<span class='badge' style='background:" + badgeColor(s) + "'>" + s + " · " + pctOf(p) + "%</span> <span class='muted'>" + esc(p.keterangan || "") + "</span><p style='margin:10px 0 2px'><b>Plan</b></p><div class='chips'>";
+    for (var a = 0; a < 12; a++) { h += "<button class='chip" + (has(p.plan, a) ? " plan-on" : "") + (p.tahun === nowYear && a === nowMonth ? " thismonth" : "") + "' onclick=\"toggleCell('" + p.id + "','plan'," + a + ")\">" + MONTHS[a] + "</button>"; }
+    h += "</div><p style='margin:2px 0'><b>Actual</b></p><div class='chips'>";
+    for (var b = 0; b < 12; b++) { h += "<button class='chip" + (has(p.actual, b) ? " actual-on" : "") + (p.tahun === nowYear && b === nowMonth ? " thismonth" : "") + "' onclick=\"toggleCell('" + p.id + "','actual'," + b + ")\">" + MONTHS[b] + "</button>"; }
+    h += "</div><button class='mini' onclick=\"editProgram('" + p.id + "')\">Edit</button> <button class='mini' onclick=\"moveProgram('" + p.id + "',-1)\">↑</button> <button class='mini' onclick=\"moveProgram('" + p.id + "',1)\">↓</button> <button class='mini del' onclick=\"delProgram('" + p.id + "')\">Hapus</button></div>";
+  }
+  if (!list.length) { h = "<p class='muted'>Belum ada program di tahun ini.</p>"; }
+  document.getElementById("cardsWrap").innerHTML = h;
+}
+function find(id) { for (var i = 0; i < programs.length; i++) { if (programs[i].id === id) { return programs[i]; } } return null; }
+function toggleCell(id, kind, m) { var p = find(id); if (!p) { return; } toggle(p[kind], m); save(); render(); }
+function setView(v) {
+  view = v;
+  document.getElementById("matrixView").style.display = (v === "matrix") ? "block" : "none";
+  document.getElementById("cardsView").style.display = (v === "cards") ? "block" : "none";
+  document.getElementById("btnMatrix").className = "viewbtn" + (v === "matrix" ? " active" : "");
+  document.getElementById("btnCards").className = "viewbtn" + (v === "cards" ? " active" : "");
+}
+function saveForm() {
+  var nama = document.getElementById("fNama").value.replace(/^\s+|\s+$/g, "");
+  var tahun = parseInt(document.getElementById("fTahun").value, 10);
+  var ket = document.getElementById("fKet").value;
+  var pic = document.getElementById("fPIC").value.replace(/^\s+|\s+$/g, "");
+  if (!nama) { alert("Nama program wajib diisi."); return; }
+  if (!tahun) { tahun = nowYear; }
+  if (editId) { var p = find(editId); if (p) { p.nama = nama; p.tahun = tahun; p.pic = pic; p.keterangan = ket; } }
+  else { programs.push({ id: uid(), nama: nama, tahun: tahun, pic: pic, keterangan: ket, plan: [], actual: [] }); }
+  save(); fillYears(); document.getElementById("yearSel").value = tahun; resetForm(); render();
+}
+function resetForm() { editId = null; document.getElementById("formTitle").textContent = "＋ Tambah Program"; document.getElementById("fNama").value = ""; document.getElementById("fTahun").value = nowYear; document.getElementById("fPIC").value = ""; document.getElementById("fKet").value = ""; }
+function editProgram(id) { var p = find(id); if (!p) { return; } editId = id; document.getElementById("formTitle").textContent = "✏️ Edit Program"; document.getElementById("fNama").value = p.nama; document.getElementById("fTahun").value = p.tahun; document.getElementById("fPIC").value = p.pic || ""; document.getElementById("fKet").value = p.keterangan; document.getElementById("formPanel").scrollIntoView(); }
+function delProgram(id) { if (!confirm("Hapus program ini?")) { return; } var out = []; for (var i = 0; i < programs.length; i++) { if (programs[i].id !== id) { out.push(programs[i]); } } programs = out; save(); fillYears(); render(); }
+function moveProgram(id, dir) {
+  var list = filtered(); var idx = -1;
+  for (var i = 0; i < list.length; i++) { if (list[i].id === id) { idx = i; } }
+  if (idx < 0) { return; }
+  var j = idx + dir; if (j < 0 || j >= list.length) { return; }
+  var a = programs.indexOf(list[idx]), b = programs.indexOf(list[j]);
+  var tmp = programs[a]; programs[a] = programs[b]; programs[b] = tmp; save(); render();
+}
+function dupYear() {
+  var y = curYear(); var copy = [];
+  for (var i = 0; i < programs.length; i++) { if (programs[i].tahun === y) { copy.push({ id: uid(), nama: programs[i].nama, tahun: y + 1, pic: programs[i].pic || "", keterangan: programs[i].keterangan, plan: programs[i].plan.slice(), actual: [] }); } }
+  if (!copy.length) { alert("Tidak ada program di tahun " + y + " untuk diduplikat."); return; }
+  programs = programs.concat(copy); save(); fillYears(); document.getElementById("yearSel").value = y + 1; render();
+  alert(copy.length + " program diduplikat ke tahun " + (y + 1) + " (Actual dikosongkan).");
+}
+function waText(list) {
+  var y = curYear(); var done = 0, late = 0;
+  var lines = ["Program Kerja " + y + " — Plan vs Actual", "Total: " + list.length + " program"];
+  for (var i = 0; i < list.length; i++) { var s = statusOf(list[i]); if (s === "Selesai") { done++; } if (s === "Terlambat") { late++; } }
+  lines.push("Selesai: " + done + " · Terlambat: " + late);
+  lines.push("");
+  lines.push("Perlu Perhatian:");
+  var any = false;
+  for (var j = 0; j < list.length; j++) { if (statusOf(list[j]) === "Terlambat") { lines.push("- " + list[j].nama + (list[j].pic ? " (PIC: " + list[j].pic + ")" : "") + " — Plan " + monthList(list[j].plan) + ", Actual " + monthList(list[j].actual)); any = true; } }
+  if (!any) { lines.push("- Tidak ada"); }
+  lines.push("");
+  lines.push("Rekap per program:");
+  for (var k = 0; k < list.length; k++) { lines.push((k + 1) + ". " + list[k].nama + " — " + statusOf(list[k]) + " (" + pctOf(list[k]) + "%)" + (list[k].pic ? " · PIC " + list[k].pic : "") + " · Plan " + monthList(list[k].plan) + " · Actual " + monthList(list[k].actual)); }
+  lines.push(""); lines.push("Terima kasih 🙏🏻");
+  return lines.join("\n");
+}
+function renderWA(list) { document.getElementById("waPreview").value = waText(list); }
+function copyWA() {
+  var t = document.getElementById("waPreview"); t.select();
+  try { document.execCommand("copy"); alert("Ringkasan tersalin. Tempel di WhatsApp."); }
+  catch (e) { alert("Clipboard terblokir — salin manual dari kotak Teks Ringkasan di bawah tombol."); }
+}
+function download(name, text, type) {
+  var blob = new Blob([text], { type: type }); var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function exportCSV() {
+  var list = filtered(); var rows = ["No,Program,PIC,Tahun,Plan,Actual,Persen,Status,Keterangan"];
+  for (var i = 0; i < list.length; i++) { var p = list[i]; rows.push((i + 1) + ',"' + p.nama.replace(/"/g, '""') + '","' + (p.pic || "").replace(/"/g, '""') + '",' + p.tahun + ',"' + monthList(p.plan) + '","' + monthList(p.actual) + '",' + pctOf(p) + "%," + statusOf(p) + ',"' + (p.keterangan || "").replace(/"/g, '""') + '"'); }
+  download("program-kerja-" + curYear() + ".csv", rows.join("\n"), "text/csv");
+}
+function listText(list) { var names = []; for (var i = 0; i < list.length; i++) { names.push(list[i].nama); } return names.join(", "); }
+function renderList(list) { document.getElementById("listPreview").value = listText(list); }
+function copyList() {
+  var t = document.getElementById("listPreview"); t.select();
+  try { document.execCommand("copy"); alert("Daftar program tersalin (dipisah koma)."); }
+  catch (e) { alert("Clipboard terblokir — salin manual dari kotak daftar di panel Import / Export."); }
+}
+function importPrograms() {
+  var raw = document.getElementById("importText").value;
+  var y = parseInt(document.getElementById("importYear").value, 10) || nowYear;
+  var parts = raw.split(/[,\n]/);
+  var seen = {}; var added = 0, skipped = 0;
+  for (var i = 0; i < parts.length; i++) {
+    var name = parts[i].replace(/^\s+|\s+$/g, "");
+    if (!name) { continue; }
+    var key = name.toLowerCase();
+    if (seen[key]) { skipped++; continue; }
+    seen[key] = true;
+    var exists = false;
+    for (var j = 0; j < programs.length; j++) { if (programs[j].tahun === y && programs[j].nama.toLowerCase() === key) { exists = true; } }
+    if (exists) { skipped++; continue; }
+    programs.push({ id: uid(), nama: name, tahun: y, pic: "", keterangan: "", plan: [], actual: [] });
+    added++;
+  }
+  if (!added && !skipped) { alert("Tidak ada teks untuk diimpor. Tempel dulu daftar programnya (dipisah koma)."); return; }
+  save(); fillYears(); document.getElementById("yearSel").value = y; render();
+  document.getElementById("importText").value = "";
+  document.getElementById("importInfo").textContent = "Import terakhir: " + added + " program ditambahkan ke tahun " + y + ", " + skipped + " dilewati (duplikat/kosong). PIC serta tanda Plan/Actual dilengkapi lewat form Edit / kartu / matriks.";
+  alert("Import selesai: " + added + " ditambahkan, " + skipped + " dilewati (duplikat).");
+}
+function backupJSON() { download("program-kerja-backup.json", JSON.stringify({ programs: programs }, null, 2), "application/json"); }
+function restoreJSON(ev) {
+  var f = ev.target.files[0]; if (!f) { return; }
+  var r = new FileReader();
+  r.onload = function () { try { var d = JSON.parse(r.result); if (d.programs && d.programs.length !== undefined) { programs = d.programs; normalize(); save(); fillYears(); render(); alert("Backup dipulihkan: " + programs.length + " program."); } else { alert("File tidak dikenali."); } } catch (e) { alert("File JSON tidak valid."); } };
+  r.readAsText(f);
+}
+load(); fillYears(); document.getElementById("importYear").value = nowYear;
+document.getElementById("js-warning").style.display = "none";
+render();
+</script>
+</body>
+</html>
